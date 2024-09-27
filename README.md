@@ -35,9 +35,11 @@ This project utilizes deep learning techniques to detect pneumonia from chest X-
 Model performance is evaluated on a separate test set to assess its ability to generalize to unseen data. Evaluation metrics include accuracy, F1 score, precision, and recall on both training and validation sets across epochs.
 
 Philosophy:
-- CNN from Scratch gave a result of score 0.70, We can experiment with no of neurons and layers to improve this upto some extent.
-- With Pre-existing model ResNet50, No of unfreeze layers 10 and 5(better result) gave different results. Experimeting with Optimizer Adam and Ndam(better result-0820) gave different results.
-- With Pre-existing model VGG16, No of unfreeze layers 5, Nadam produced a score of 0.696, despite it's great accuracy of 93%, strange.
+- CNN from Scratch gave a result of score 0.70, We can experiment with no of neurons and layers to improve this up to some extent
+- With Pre-existing model ResNet50, No of unfreeze layers 10 and 5(better result) gave different results. Experimenting with Optimizer Adam and Ndam(better result-0820) gave different results
+- With Pre-existing model VGG16, No of unfreeze layers 5, Nadam produced a score of 0.696, despite it's great accuracy of 93%
+- Dropout and BatchNormalization has an impact on the result. Experiment with various Drop out range 0.2-0.5
+- No of Layers and No of perceptrons has an impact on the result
 
 Once trained, the models can make predictions on new chest X-ray images to classify them as either normal or indicating pneumonia. The predictions are based on the highest probability output from the softmax layer of the model.
 
@@ -53,6 +55,7 @@ This project demonstrates the application of deep learning techniques for medica
 ## Roadmap
 
 - To experiment with ensemble methods
+- Processing images helps like histrogram equavilization, canny edge detection and supply along with context, needs to be experimented
 
 ## FAQ
 
