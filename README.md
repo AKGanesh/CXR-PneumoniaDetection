@@ -52,10 +52,86 @@ This project demonstrates the application of deep learning techniques for medica
 
 **Packages:** Pandas, Numpy, Matplotlib, Tensorflow, Keras
 
+## Deployable App and Improved Pipeline
+
+This repo now includes a modular training pipeline and a Streamlit web app for inference.
+
+### What's new for accuracy
+
+- **Ensemble learning**: EfficientNetB0 + VGG16 with F1-weighted averaging
+- **CLAHE preprocessing** for chest X-ray contrast enhancement
+- **BatchNormalization + Dropout** on transfer-learning heads
+- **Class-weight balancing** for imbalanced data
+- **Threshold tuning** on validation F1 (instead of a fixed 0.5 cutoff)
+- **Checkpointing on val AUC** with early stopping and learning-rate reduction
+
+### Project layout
+
+```
+src/cxr/          # Reusable training and inference code
+app/              # Streamlit deployment UI
+scripts/          # CLI for demo data, training, and inference
+models/           # Saved ensemble weights (created by training)
+experiments/      # Original Kaggle notebook experiments
+```
+
+### Quick start (local demo)
+
+```bash
+pip install -r requirements.txt
+python scripts/create_demo_dataset.py
+PYTHONPATH=src python scripts/train.py --epochs 15 --fine-tune-epochs 10
+streamlit run app/streamlit_app.py
+```
+
+Upload a chest X-ray in the browser to get a prediction and Grad-CAM heatmap.
+
+### Train on the real Kaggle dataset
+
+Point the training script at your downloaded hackathon/Kaggle data:
+
+```bash
+PYTHONPATH=src python scripts/train.py \
+  --metadata-csv /path/to/1.\ train_metadata.csv \
+  --source-dir /path/to/processed_train_data \
+  --working-dir data/working \
+  --epochs 15 \
+  --fine-tune-epochs 10
+```
+
+Recommended settings for better accuracy on real data:
+
+- Keep both `efficientnet` and `vgg16` in the ensemble
+- Use GPU if available (TensorFlow will pick it up automatically)
+- Increase epochs once validation metrics stabilize
+
+### Deploy with Docker
+
+Train locally first so `models/` contains `ensemble_metadata.json` and `*_best.keras` files, then:
+
+```bash
+docker build -t cxr-pneumonia .
+docker run -p 8501:8501 -v $(pwd)/models:/app/models cxr-pneumonia
+```
+
+Open `http://localhost:8501`.
+
+### Original notebook results
+
+| Type | Test Accuracy | Test Loss | Score |
+|------|---------------|-----------|-------|
+| CNN From Scratch | 86% | 0.34 | 0.714 |
+| ResNet50 (TF+FT) | 82% | 0.39 | 0.820 |
+| VGG16 (TF+FT) | 92% | 0.22 | 0.696 |
+
+The new ensemble pipeline targets higher **F1** on imbalanced validation data rather than accuracy alone.
+
 ## Roadmap
 
-- To experiment with ensemble methods
-- Processing images helps like histrogram equavilization, canny edge detection and supply along with context, needs to be experimented
+- ~~Ensemble methods~~ (implemented in `src/cxr/train.py`)
+- ~~Histogram equalization (CLAHE)~~ (implemented in `src/cxr/preprocessing.py`)
+- Canny edge multi-channel inputs
+- FastAPI REST endpoint alongside Streamlit
 
 ## FAQ
 

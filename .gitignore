@@ -1,0 +1,12 @@
+models/*
+!models/.gitkeep
+data/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+*.keras
+*.h5
+*.zip
+.DS_Store
