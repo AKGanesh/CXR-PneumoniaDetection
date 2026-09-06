@@ -1,0 +1,2 @@
+# Trained model weights are saved here after running scripts/train.py.
+# *.keras files are gitignored; mount or copy this directory when deploying.
