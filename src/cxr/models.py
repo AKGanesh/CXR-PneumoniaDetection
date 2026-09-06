@@ -91,12 +91,6 @@ def ensemble_predict(
 
 def get_last_conv_layer(model: Model) -> tf.keras.layers.Layer:
     """Find the last convolutional layer for Grad-CAM."""
-    for layer in reversed(model.layers):
-        if isinstance(layer, tf.keras.Model):
-            try:
-                return get_last_conv_layer(layer)
-            except ValueError:
-                continue
-        if len(layer.output_shape) == 4:
-            return layer
-    raise ValueError("No convolutional layer found for Grad-CAM.")
+    from cxr.gradcam import _find_last_conv_layer
+
+    return _find_last_conv_layer(model)

@@ -29,6 +29,32 @@ def load_inference_bundle(models_dir: Path | None = None) -> tuple[list[tf.keras
     return models, metadata
 
 
+def predict_array(
+    image: np.ndarray,
+    models: list[tf.keras.Model],
+    metadata: dict,
+) -> dict:
+    """Run ensemble inference on a preprocessed image array."""
+    if image.ndim == 3:
+        batch = np.expand_dims(image, axis=0)
+    else:
+        batch = image
+
+    member_weights = metadata.get("member_weights")
+    probability = float(
+        ensemble_predict(models, batch, weights=member_weights).numpy()[0][0]
+    )
+    threshold = float(metadata.get("threshold", 0.5))
+    label = label_from_probability(probability, threshold=threshold)
+
+    return {
+        "label": label,
+        "probability": probability,
+        "confidence": probability if label == "pneumonia" else 1.0 - probability,
+        "threshold": threshold,
+    }
+
+
 def predict_image(
     image_path: str | Path,
     models: list[tf.keras.Model] | None = None,
@@ -44,20 +70,27 @@ def predict_image(
         size=tuple(metadata.get("image_size", [224, 224])),
         use_clahe=metadata.get("use_clahe", True),
     )
-    batch = np.expand_dims(image, axis=0)
-    member_weights = metadata.get("member_weights")
-    probability = float(
-        ensemble_predict(models, batch, weights=member_weights).numpy()[0][0]
-    )
-    threshold = float(metadata.get("threshold", 0.5))
-    label = label_from_probability(probability, threshold=threshold)
+    return predict_array(image, models, metadata)
 
-    return {
-        "label": label,
-        "probability": probability,
-        "confidence": probability if label == "pneumonia" else 1.0 - probability,
-        "threshold": threshold,
-    }
+
+def predict_bytes(
+    data: bytes,
+    models: list[tf.keras.Model] | None = None,
+    metadata: dict | None = None,
+    models_dir: Path | None = None,
+) -> tuple[dict, np.ndarray]:
+    """Run ensemble inference on uploaded image bytes."""
+    from cxr.preprocessing import preprocess_image_bytes
+
+    if models is None or metadata is None:
+        models, metadata = load_inference_bundle(models_dir)
+
+    image = preprocess_image_bytes(
+        data,
+        size=tuple(metadata.get("image_size", [224, 224])),
+        use_clahe=metadata.get("use_clahe", True),
+    )
+    return predict_array(image, models, metadata), image
 
 
 def predict_directory_to_csv(

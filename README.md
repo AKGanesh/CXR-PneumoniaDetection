@@ -69,7 +69,7 @@ This repo now includes a modular training pipeline and a Streamlit web app for i
 
 ```
 src/cxr/          # Reusable training and inference code
-app/              # Streamlit deployment UI
+app/              # Streamlit UI + FastAPI REST API
 scripts/          # CLI for demo data, training, and inference
 models/           # Saved ensemble weights (created by training)
 experiments/      # Original Kaggle notebook experiments
@@ -116,6 +116,47 @@ docker run -p 8501:8501 -v $(pwd)/models:/app/models cxr-pneumonia
 
 Open `http://localhost:8501`.
 
+### FastAPI REST API
+
+Start the API after training:
+
+```bash
+PYTHONPATH=src python scripts/run_api.py
+```
+
+Or with uvicorn directly:
+
+```bash
+PYTHONPATH=src uvicorn app.api:app --host 0.0.0.0 --port 8000 --app-dir .
+```
+
+Interactive docs: `http://localhost:8000/docs`
+
+**Endpoints**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Service and model load status |
+| GET | `/model/info` | Ensemble metadata and threshold |
+| POST | `/predict` | Upload PNG/JPG, get classification JSON |
+| POST | `/predict/gradcam` | Upload PNG/JPG, get classification + Grad-CAM PNG (base64) |
+
+**Example**
+
+```bash
+curl -X POST "http://localhost:8000/predict" \
+  -H "accept: application/json" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@data/demo/train/pneumonia_005.png"
+```
+
+Deploy the API with Docker:
+
+```bash
+docker build -f Dockerfile.api -t cxr-pneumonia-api .
+docker run -p 8000:8000 -v $(pwd)/models:/app/models cxr-pneumonia-api
+```
+
 ### Original notebook results
 
 | Type | Test Accuracy | Test Loss | Score |
@@ -130,8 +171,8 @@ The new ensemble pipeline targets higher **F1** on imbalanced validation data ra
 
 - ~~Ensemble methods~~ (implemented in `src/cxr/train.py`)
 - ~~Histogram equalization (CLAHE)~~ (implemented in `src/cxr/preprocessing.py`)
+- ~~FastAPI REST endpoint~~ (implemented in `app/api.py`)
 - Canny edge multi-channel inputs
-- FastAPI REST endpoint alongside Streamlit
 
 ## FAQ
 

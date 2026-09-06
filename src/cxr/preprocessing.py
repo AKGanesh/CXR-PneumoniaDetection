@@ -28,6 +28,20 @@ def load_image(
     if image is None:
         raise ValueError(f"Unable to read image: {path}")
 
+    return preprocess_image_array(image, size=size, use_clahe=use_clahe)
+
+
+def preprocess_image_array(
+    image: np.ndarray,
+    size: tuple[int, int] = (224, 224),
+    use_clahe: bool = True,
+) -> np.ndarray:
+    """Preprocess a single image array for model input."""
+    if image.ndim == 2:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    elif image.shape[-1] == 4:
+        image = cv2.cvtColor(image, cv2.COLOR_RGBA2BGR)
+
     if use_clahe:
         image = apply_clahe(image)
     else:
@@ -35,6 +49,19 @@ def load_image(
 
     image = cv2.resize(image, size)
     return image.astype(np.float32) / 255.0
+
+
+def preprocess_image_bytes(
+    data: bytes,
+    size: tuple[int, int] = (224, 224),
+    use_clahe: bool = True,
+) -> np.ndarray:
+    """Decode uploaded image bytes and preprocess for model input."""
+    encoded = np.frombuffer(data, dtype=np.uint8)
+    image = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError("Unable to decode uploaded image bytes.")
+    return preprocess_image_array(image, size=size, use_clahe=use_clahe)
 
 
 def preprocess_batch(
